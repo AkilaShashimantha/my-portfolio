@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-paper: #F6F4F0;
+  --bg-card: #EFECE6;
+  --border-hairline: #DCD8CF;
+  --text-ink: #161615;
+  --text-muted: #63605A;
+  --accent-terracotta: #C84B31;
+  --accent-olive: #2A3B32;
+}
+
+body {
+  background-color: var(--bg-paper);
+  color: var(--text-ink);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Selection */
+::selection {
+  background-color: #C84B31;
+  color: #F6F4F0;
+}
+
+/* Architectural Hairline Border Utilities */
+.hairline-b {
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.hairline-t {
+  border-top: 1px solid var(--border-hairline);
+}
+
+.hairline-r {
+  border-right: 1px solid var(--border-hairline);
+}
+
+.hairline-l {
+  border-left: 1px solid var(--border-hairline);
+}
+
+.hairline-all {
+  border: 1px solid var(--border-hairline);
+}
+
+/* Subtle Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F6F4F0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #DCD8CF;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8D8982;
+}
