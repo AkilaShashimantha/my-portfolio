@@ -46,7 +46,16 @@ export async function getMongoDb(): Promise<Db | null> {
   }
 }
 
-export function toMongoId(id: string): ObjectId | string {
+export function buildMongoIdFilter(id: string): any {
+  if (typeof id === "string" && id.length === 24 && ObjectId.isValid(id)) {
+    return {
+      $or: [{ id }, { _id: new ObjectId(id) }],
+    };
+  }
+  return { id };
+}
+
+export function toMongoId(id: string): any {
   try {
     if (typeof id === "string" && id.length === 24 && ObjectId.isValid(id)) {
       return new ObjectId(id);
@@ -63,5 +72,5 @@ export function formatMongoDoc<T extends Record<string, any>>(doc: T): T {
   return {
     ...rest,
     id: doc.id || (_id ? _id.toString() : ""),
-  } as T;
+  } as unknown as T;
 }
