@@ -5,6 +5,7 @@ import Credentials from "next-auth/providers/credentials";
 export const ALLOWED_ADMIN_EMAIL = "akilashashimantha84@gmail.com";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  trustHost: true,
   providers: [
     ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
       ? [

@@ -33,6 +33,15 @@ const PROBE_INTERVAL_MS = 25000;
  * Prevents multiple sequential seconds-long connection timeouts when the DB is down.
  */
 async function isDbConnected(): Promise<boolean> {
+  // In Vercel or cloud environments without a real external Postgres DB, skip probe
+  if (
+    process.env.VERCEL ||
+    !process.env.DATABASE_URL ||
+    process.env.DATABASE_URL.includes("localhost")
+  ) {
+    return false;
+  }
+
   const now = Date.now();
   if (dbConnected !== null && now - lastDbProbe < PROBE_INTERVAL_MS) {
     return dbConnected;
@@ -125,8 +134,8 @@ function ensureLocalStore(): LocalStore {
 function writeLocalStore(data: LocalStore) {
   try {
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf8");
-  } catch (err) {
-    console.error("Error writing to local data store:", err);
+  } catch {
+    // Read-only filesystem in serverless environments (e.g. Vercel)
   }
 }
 
@@ -159,7 +168,6 @@ export async function dbGetSiteProfile() {
 export async function dbUpdateSiteProfile(data: any) {
   const store = ensureLocalStore();
   store.siteProfile = { ...store.siteProfile, ...data, updatedAt: new Date().toISOString() };
-  writeLocalStore(store);
 
   try {
     const mongo = await getMongoDb();
@@ -175,10 +183,14 @@ export async function dbUpdateSiteProfile(data: any) {
       } else {
         await col.insertOne({ ...store.siteProfile });
       }
+      const updated = await col.findOne({});
+      return formatMongoDoc(updated || store.siteProfile);
     }
   } catch (err) {
     console.warn("MongoDB error in dbUpdateSiteProfile:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -231,16 +243,18 @@ export async function dbCreateSocialLink(data: any) {
   const store = ensureLocalStore();
   const newLink = { id: `social-${Date.now()}`, ...data };
   store.socialLinks.push(newLink);
-  writeLocalStore(store);
 
   try {
     const mongo = await getMongoDb();
     if (mongo) {
       await mongo.collection("social_links").insertOne({ ...newLink });
+      return newLink;
     }
   } catch (err) {
     console.warn("MongoDB error in dbCreateSocialLink:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -257,7 +271,6 @@ export async function dbUpdateSocialLink(id: string, data: any) {
   const index = store.socialLinks.findIndex((l) => l.id === id);
   if (index !== -1) {
     store.socialLinks[index] = { ...store.socialLinks[index], ...data };
-    writeLocalStore(store);
   }
 
   try {
@@ -268,10 +281,13 @@ export async function dbUpdateSocialLink(id: string, data: any) {
         { $or: [{ id }, { _id: toMongoId(id) }] },
         { $set: updateFields }
       );
+      return index !== -1 ? store.socialLinks[index] : null;
     }
   } catch (err) {
     console.warn("MongoDB error in dbUpdateSocialLink:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -289,7 +305,6 @@ export async function dbUpdateSocialLink(id: string, data: any) {
 export async function dbDeleteSocialLink(id: string) {
   const store = ensureLocalStore();
   store.socialLinks = store.socialLinks.filter((l) => l.id !== id);
-  writeLocalStore(store);
 
   try {
     const mongo = await getMongoDb();
@@ -297,10 +312,13 @@ export async function dbDeleteSocialLink(id: string) {
       await mongo.collection("social_links").deleteOne({
         $or: [{ id }, { _id: toMongoId(id) }],
       });
+      return { id };
     }
   } catch (err) {
     console.warn("MongoDB error in dbDeleteSocialLink:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -320,7 +338,6 @@ export async function dbReorderSocialLinks(items: { id: string; order: number }[
       link.order = item.order;
     }
   }
-  writeLocalStore(store);
 
   try {
     const mongo = await getMongoDb();
@@ -332,10 +349,13 @@ export async function dbReorderSocialLinks(items: { id: string; order: number }[
           { $set: { order: item.order } }
         );
       }
+      return true;
     }
   } catch (err) {
     console.warn("MongoDB error in dbReorderSocialLinks:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -392,16 +412,18 @@ export async function dbCreateProject(data: any) {
     ...data,
   };
   store.projects.push(newProj);
-  writeLocalStore(store);
 
   try {
     const mongo = await getMongoDb();
     if (mongo) {
       await mongo.collection("projects").insertOne({ ...newProj });
+      return newProj;
     }
   } catch (err) {
     console.warn("MongoDB error in dbCreateProject:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -418,7 +440,6 @@ export async function dbUpdateProject(id: string, data: any) {
   const index = store.projects.findIndex((p) => p.id === id);
   if (index !== -1) {
     store.projects[index] = { ...store.projects[index], ...data };
-    writeLocalStore(store);
   }
 
   try {
@@ -429,10 +450,13 @@ export async function dbUpdateProject(id: string, data: any) {
         { $or: [{ id }, { _id: toMongoId(id) }] },
         { $set: updateFields }
       );
+      return index !== -1 ? store.projects[index] : null;
     }
   } catch (err) {
     console.warn("MongoDB error in dbUpdateProject:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -450,7 +474,6 @@ export async function dbUpdateProject(id: string, data: any) {
 export async function dbDeleteProject(id: string) {
   const store = ensureLocalStore();
   store.projects = store.projects.filter((p) => p.id !== id);
-  writeLocalStore(store);
 
   try {
     const mongo = await getMongoDb();
@@ -458,10 +481,13 @@ export async function dbDeleteProject(id: string) {
       await mongo.collection("projects").deleteOne({
         $or: [{ id }, { _id: toMongoId(id) }],
       });
+      return { id };
     }
   } catch (err) {
     console.warn("MongoDB error in dbDeleteProject:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -478,7 +504,6 @@ export async function dbToggleProjectFeatured(id: string) {
   const proj = store.projects.find((p) => p.id === id);
   if (proj) {
     proj.featured = !proj.featured;
-    writeLocalStore(store);
   }
 
   try {
@@ -488,10 +513,13 @@ export async function dbToggleProjectFeatured(id: string) {
         { $or: [{ id }, { _id: toMongoId(id) }] },
         { $set: { featured: proj.featured } }
       );
+      return proj;
     }
   } catch (err) {
     console.warn("MongoDB error in dbToggleProjectFeatured:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -547,16 +575,18 @@ export async function dbCreateExperience(data: any) {
     ...data,
   };
   store.experiences.push(newExp);
-  writeLocalStore(store);
 
   try {
     const mongo = await getMongoDb();
     if (mongo) {
       await mongo.collection("work_experiences").insertOne({ ...newExp });
+      return newExp;
     }
   } catch (err) {
     console.warn("MongoDB error in dbCreateExperience:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -573,7 +603,6 @@ export async function dbUpdateExperience(id: string, data: any) {
   const index = store.experiences.findIndex((e) => e.id === id);
   if (index !== -1) {
     store.experiences[index] = { ...store.experiences[index], ...data };
-    writeLocalStore(store);
   }
 
   try {
@@ -584,10 +613,13 @@ export async function dbUpdateExperience(id: string, data: any) {
         { $or: [{ id }, { _id: toMongoId(id) }] },
         { $set: updateFields }
       );
+      return index !== -1 ? store.experiences[index] : null;
     }
   } catch (err) {
     console.warn("MongoDB error in dbUpdateExperience:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -605,7 +637,6 @@ export async function dbUpdateExperience(id: string, data: any) {
 export async function dbDeleteExperience(id: string) {
   const store = ensureLocalStore();
   store.experiences = store.experiences.filter((e) => e.id !== id);
-  writeLocalStore(store);
 
   try {
     const mongo = await getMongoDb();
@@ -613,10 +644,13 @@ export async function dbDeleteExperience(id: string) {
       await mongo.collection("work_experiences").deleteOne({
         $or: [{ id }, { _id: toMongoId(id) }],
       });
+      return { id };
     }
   } catch (err) {
     console.warn("MongoDB error in dbDeleteExperience:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -661,16 +695,18 @@ export async function dbCreateCertificate(data: any) {
   const store = ensureLocalStore();
   const newCert = { id: `cert-${Date.now()}`, ...data };
   store.certificates.push(newCert);
-  writeLocalStore(store);
 
   try {
     const mongo = await getMongoDb();
     if (mongo) {
       await mongo.collection("certificates").insertOne({ ...newCert });
+      return newCert;
     }
   } catch (err) {
     console.warn("MongoDB error in dbCreateCertificate:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -687,7 +723,6 @@ export async function dbUpdateCertificate(id: string, data: any) {
   const index = store.certificates.findIndex((c) => c.id === id);
   if (index !== -1) {
     store.certificates[index] = { ...store.certificates[index], ...data };
-    writeLocalStore(store);
   }
 
   try {
@@ -698,10 +733,13 @@ export async function dbUpdateCertificate(id: string, data: any) {
         { $or: [{ id }, { _id: toMongoId(id) }] },
         { $set: updateFields }
       );
+      return index !== -1 ? store.certificates[index] : null;
     }
   } catch (err) {
     console.warn("MongoDB error in dbUpdateCertificate:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -719,7 +757,6 @@ export async function dbUpdateCertificate(id: string, data: any) {
 export async function dbDeleteCertificate(id: string) {
   const store = ensureLocalStore();
   store.certificates = store.certificates.filter((c) => c.id !== id);
-  writeLocalStore(store);
 
   try {
     const mongo = await getMongoDb();
@@ -727,10 +764,13 @@ export async function dbDeleteCertificate(id: string) {
       await mongo.collection("certificates").deleteOne({
         $or: [{ id }, { _id: toMongoId(id) }],
       });
+      return { id };
     }
   } catch (err) {
     console.warn("MongoDB error in dbDeleteCertificate:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -786,16 +826,18 @@ export async function dbCreatePhoto(data: any) {
     takenAt: takenAtStr,
   };
   store.photos.push(newPhoto);
-  writeLocalStore(store);
 
   try {
     const mongo = await getMongoDb();
     if (mongo) {
       await mongo.collection("photos").insertOne({ ...newPhoto });
+      return newPhoto;
     }
   } catch (err) {
     console.warn("MongoDB error in dbCreatePhoto:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -827,7 +869,6 @@ export async function dbUpdatePhoto(id: string, data: any) {
       ...data,
       takenAt: updatedTakenAt,
     };
-    writeLocalStore(store);
   }
 
   try {
@@ -838,10 +879,13 @@ export async function dbUpdatePhoto(id: string, data: any) {
         { $or: [{ id }, { _id: toMongoId(id) }] },
         { $set: updateFields }
       );
+      return index !== -1 ? store.photos[index] : null;
     }
   } catch (err) {
     console.warn("MongoDB error in dbUpdatePhoto:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -863,7 +907,6 @@ export async function dbUpdatePhoto(id: string, data: any) {
 export async function dbDeletePhoto(id: string) {
   const store = ensureLocalStore();
   store.photos = store.photos.filter((p) => p.id !== id);
-  writeLocalStore(store);
 
   try {
     const mongo = await getMongoDb();
@@ -871,10 +914,13 @@ export async function dbDeletePhoto(id: string) {
       await mongo.collection("photos").deleteOne({
         $or: [{ id }, { _id: toMongoId(id) }],
       });
+      return { id };
     }
   } catch (err) {
     console.warn("MongoDB error in dbDeletePhoto:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -926,16 +972,18 @@ export async function dbCreateContactSubmission(data: any) {
     ...data,
   };
   store.contactSubmissions.unshift(newSub);
-  writeLocalStore(store);
 
   try {
     const mongo = await getMongoDb();
     if (mongo) {
       await mongo.collection("contact_submissions").insertOne({ ...newSub });
+      return newSub;
     }
   } catch (err) {
     console.warn("MongoDB error in dbCreateContactSubmission:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -952,7 +1000,6 @@ export async function dbUpdateSubmissionStatus(id: string, status: string) {
   const sub = store.contactSubmissions.find((s) => s.id === id);
   if (sub) {
     sub.status = status;
-    writeLocalStore(store);
   }
 
   try {
@@ -962,10 +1009,13 @@ export async function dbUpdateSubmissionStatus(id: string, status: string) {
         { $or: [{ id }, { _id: toMongoId(id) }] },
         { $set: { status } }
       );
+      return sub || null;
     }
   } catch (err) {
     console.warn("MongoDB error in dbUpdateSubmissionStatus:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
@@ -983,7 +1033,6 @@ export async function dbUpdateSubmissionStatus(id: string, status: string) {
 export async function dbDeleteSubmission(id: string) {
   const store = ensureLocalStore();
   store.contactSubmissions = store.contactSubmissions.filter((s) => s.id !== id);
-  writeLocalStore(store);
 
   try {
     const mongo = await getMongoDb();
@@ -991,10 +1040,13 @@ export async function dbDeleteSubmission(id: string) {
       await mongo.collection("contact_submissions").deleteOne({
         $or: [{ id }, { _id: toMongoId(id) }],
       });
+      return { id };
     }
   } catch (err) {
     console.warn("MongoDB error in dbDeleteSubmission:", err);
   }
+
+  writeLocalStore(store);
 
   if (await isDbConnected()) {
     try {
