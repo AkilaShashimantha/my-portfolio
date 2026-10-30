@@ -36,12 +36,18 @@ export async function GET(
 
     const mimeType = fileDoc.mimeType || "application/octet-stream";
 
+    const headers: Record<string, string> = {
+      "Content-Type": mimeType,
+      "Cache-Control": "public, max-age=31536000, immutable",
+    };
+
+    if (fileDoc.originalName) {
+      headers["Content-Disposition"] = `inline; filename="${encodeURIComponent(fileDoc.originalName)}"`;
+    }
+
     return new NextResponse(buffer, {
       status: 200,
-      headers: {
-        "Content-Type": mimeType,
-        "Cache-Control": "public, max-age=31536000, immutable",
-      },
+      headers,
     });
   } catch (err: any) {
     console.error("Error serving uploaded file:", err);

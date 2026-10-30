@@ -143,20 +143,17 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
           label="PORTRAIT AVATAR URL / UPLOAD"
           value={formData.avatarUrl}
           onChange={(url) => setFormData({ ...formData, avatarUrl: url })}
+          accept="image/*"
+          placeholder="https://... or click UPLOAD"
         />
 
-        <div className="space-y-1.5">
-          <label className="block font-mono text-xs uppercase tracking-wider text-ink-muted">
-            DOWNLOADABLE RESUME / CV URL *
-          </label>
-          <input
-            type="text"
-            required
-            value={formData.resumeUrl}
-            onChange={(e) => setFormData({ ...formData, resumeUrl: e.target.value })}
-            className="w-full bg-paper hairline-all px-3.5 py-2 text-xs font-mono text-ink focus:border-terracotta focus:outline-none"
-          />
-        </div>
+        <MediaUploader
+          label="DOWNLOADABLE RESUME / CV (PDF OR URL) *"
+          value={formData.resumeUrl}
+          onChange={(url) => setFormData({ ...formData, resumeUrl: url })}
+          accept="application/pdf,.pdf,image/*"
+          placeholder="/resume.pdf, https://..., or click UPLOAD"
+        />
       </div>
 
       <div className="pt-4 hairline-t flex items-center justify-between">

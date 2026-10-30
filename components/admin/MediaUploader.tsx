@@ -1,15 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Link as LinkIcon, Check, Image as ImageIcon } from "lucide-react";
+import { Upload, Check, ExternalLink } from "lucide-react";
 
 interface MediaUploaderProps {
   value: string;
   onChange: (url: string) => void;
   label?: string;
+  accept?: string;
+  placeholder?: string;
 }
 
-export function MediaUploader({ value, onChange, label = "IMAGE URL OR UPLOAD" }: MediaUploaderProps) {
+export function MediaUploader({
+  value,
+  onChange,
+  label = "IMAGE URL OR UPLOAD",
+  accept = "image/*,application/pdf",
+  placeholder = "https://... or /uploads/...",
+}: MediaUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +62,7 @@ export function MediaUploader({ value, onChange, label = "IMAGE URL OR UPLOAD" }
             type="text"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="https://... or /uploads/..."
+            placeholder={placeholder}
             className="w-full bg-paper hairline-all px-3 py-2 text-xs font-mono text-ink focus:border-terracotta focus:outline-none"
           />
         </div>
@@ -64,7 +72,7 @@ export function MediaUploader({ value, onChange, label = "IMAGE URL OR UPLOAD" }
           <span>{uploading ? "UPLOADING..." : "UPLOAD"}</span>
           <input
             type="file"
-            accept="image/*,application/pdf"
+            accept={accept}
             onChange={handleFileUpload}
             disabled={uploading}
             className="hidden"
@@ -81,7 +89,16 @@ export function MediaUploader({ value, onChange, label = "IMAGE URL OR UPLOAD" }
       {value && (
         <div className="flex items-center gap-2 pt-1 font-mono text-[11px] text-ink-muted">
           <Check className="w-3.5 h-3.5 text-olive shrink-0" />
-          <span className="truncate max-w-md">{value}</span>
+          <span className="truncate max-w-xs">{value}</span>
+          <a
+            href={value}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-0.5 text-terracotta hover:underline ml-2"
+          >
+            <span>View</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
         </div>
       )}
     </div>
