@@ -508,12 +508,17 @@ export async function dbToggleProjectFeatured(id: string) {
 
   try {
     const mongo = await getMongoDb();
-    if (mongo && proj) {
-      await mongo.collection("projects").updateOne(
-        { $or: [{ id }, { _id: toMongoId(id) }] },
-        { $set: { featured: proj.featured } }
-      );
-      return proj;
+    if (mongo) {
+      const col = mongo.collection("projects");
+      const existing = await col.findOne({ $or: [{ id }, { _id: toMongoId(id) }] });
+      if (existing) {
+        const newFeatured = !existing.featured;
+        await col.updateOne(
+          { _id: existing._id },
+          { $set: { featured: newFeatured } }
+        );
+        return formatMongoDoc({ ...existing, featured: newFeatured });
+      }
     }
   } catch (err) {
     console.warn("MongoDB error in dbToggleProjectFeatured:", err);

@@ -17,7 +17,7 @@ const certificateSchema = z.object({
   expiryDate: z.string().nullable().optional(),
   credentialId: z.string().nullable().optional(),
   credentialUrl: z.string().nullable().optional(),
-  imageUrl: z.string().url("Valid credential image URL is required"),
+  imageUrl: z.string().min(1, "Valid credential image URL or path is required"),
   order: z.number().int().default(0),
 });
 

@@ -16,7 +16,7 @@ const projectSchema = z.object({
   slug: z.string().min(2, "Slug is required"),
   summary: z.string().min(10, "Summary is required"),
   description: z.string().min(20, "Description is required"),
-  coverImage: z.string().url("Valid cover image URL is required"),
+  coverImage: z.string().min(1, "Valid cover image URL or path is required"),
   galleryImages: z.array(z.string()).default([]),
   techStack: z.array(z.string()).min(1, "At least one technology is required"),
   liveUrl: z.string().nullable().optional(),

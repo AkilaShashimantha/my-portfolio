@@ -11,7 +11,7 @@ const profileSchema = z.object({
   subheadline: z.string().min(3, "Subheadline is required"),
   shortBio: z.string().min(10, "Short bio is required"),
   extendedBio: z.string().min(20, "Extended bio is required"),
-  avatarUrl: z.string().url("Valid avatar URL is required"),
+  avatarUrl: z.string().min(1, "Valid avatar URL or path is required"),
   resumeUrl: z.string().min(1, "Resume URL is required"),
   location: z.string().min(2, "Location is required"),
   availableForWork: z.boolean(),
