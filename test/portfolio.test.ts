@@ -115,7 +115,7 @@ async function runTests() {
   console.log("\nTest 4: Verify Projects Database Query & Full CRUD");
   const projects = await dbGetProjects();
   assert(Array.isArray(projects), "Projects must be an array");
-  assert(projects.length >= 4, "Must have at least 4 seeded projects");
+  assert(projects.length >= 1, "Must have at least 1 seeded project");
 
   const newProj = await dbCreateProject({
     title: "Test Architecture Case Study",

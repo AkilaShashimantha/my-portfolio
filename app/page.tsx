@@ -14,6 +14,7 @@ import { CertificatesSection } from "@/components/editorial/CertificatesSection"
 import { PhotosSection } from "@/components/editorial/PhotosSection";
 import { ContactSection } from "@/components/editorial/ContactSection";
 import { Footer } from "@/components/editorial/Footer";
+import { JsonLd } from "@/components/seo/JsonLd";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,8 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-paper flex flex-col justify-between selection:bg-terracotta selection:text-paper">
+      <JsonLd profile={profile} socialLinks={socialLinks} />
+
       <Navbar availableForWork={profile?.availableForWork ?? true} />
 
       <main className="flex-1">

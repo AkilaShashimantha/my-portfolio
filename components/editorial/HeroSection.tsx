@@ -128,13 +128,19 @@ export function HeroSection({ profile, socialLinks }: HeroSectionProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: "easeOut" }}
           >
-            {/* Header Badge */}
-            <div className="inline-block mb-8 font-mono text-xs uppercase tracking-widest px-3 py-1 bg-paper-card hairline-all text-ink font-medium">
-              EDITORIAL DOSSIER // VOL. 2026
+            {/* Header Badge & Name Tag */}
+            <div className="flex flex-wrap items-center gap-3 mb-8">
+              <div className="inline-block font-mono text-xs uppercase tracking-widest px-3 py-1 bg-paper-card hairline-all text-ink font-medium">
+                EDITORIAL DOSSIER // VOL. 2026
+              </div>
+              <span className="font-mono text-xs uppercase tracking-widest text-terracotta font-semibold">
+                {profile.fullName}
+              </span>
             </div>
 
             {/* Display Headline in Serif */}
             <h1 className="font-serif text-4xl sm:text-6xl lg:text-7xl font-normal leading-[1.08] tracking-tight text-ink mb-8">
+              <span className="sr-only">{profile.fullName} — </span>
               {profile.headline}
             </h1>
 
