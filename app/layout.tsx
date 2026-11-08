@@ -102,7 +102,7 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
   },
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "googlefcd7ce448e83e559",
   },
 };
 
@@ -113,14 +113,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable} ${serif.variable} scroll-smooth`}>
-      <head>
-        {process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ? (
-          <meta
-            name="google-site-verification"
-            content={process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION}
-          />
-        ) : null}
-      </head>
       <body className="min-h-screen bg-paper text-ink font-sans selection:bg-terracotta selection:text-paper antialiased">
         {children}
       </body>
